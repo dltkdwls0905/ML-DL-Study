@@ -9,7 +9,6 @@ OUT_DIR="${ROOT_DIR}/data/out"
 mkdir -p "${RAW_DIR}" "${REF_DIR}" "${OUT_DIR}"
 
 echo "[*] 샘플 FASTQ(페어드) 더미 생성 (실습용 소형)"
-# 실제 강의에선 head로 줄인 파일을 사용하지만, 여기서는 더미 예시 생성
 cat > "${RAW_DIR}/TS-resized_1.fastq" <<'EOF'
 @SEQ_ID/1
 ACGTACGTACGTACGTACGT

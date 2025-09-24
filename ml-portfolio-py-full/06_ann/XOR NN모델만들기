@@ -20,6 +20,19 @@ model = nn.Sequential(
 
 #DeeperANN(Hidden layer 층을 1개에서 2개로 변경)
 model = nn.Sequential(
+          nn.Linear(2, 10, bias=True), nn.Sigmoid(),
+          nn.Linear(10, 10, bias=True), nn.Sigmoid(),
+          nn.Linear(10, 10, bias=True), nn.Sigmoid(),
+          nn.Linear(10, 10, bias=True), nn.Sigmoid(),
+          nn.Linear(10, 10, bias=True), nn.Sigmoid(),
+          nn.Linear(10, 10, bias=True), nn.Sigmoid(),
+          nn.Linear(10, 10, bias=True), nn.Sigmoid(),
+          nn.Linear(10, 1, bias=True), nn.Sigmoid()).to(device) #10,000 epoch를 돌려도 학습이 안됨
+# why?
+# 2st winter seconds 시작 -> vanishing gradient
+
+#sigmoid to ReLU
+model = nn.Sequential(
           nn.Linear(2, 10, bias=True), nn.ReLU(), nn.Dropout(0.1),
           nn.Linear(10, 10, bias=True), nn.ReLU(), nn.Dropout(0.1),
           nn.Linear(10, 10, bias=True), nn.ReLU(), nn.Dropout(0.1),
@@ -27,6 +40,4 @@ model = nn.Sequential(
           nn.Linear(10, 10, bias=True), nn.ReLU(), nn.Dropout(0.1),
           nn.Linear(10, 10, bias=True), nn.ReLU(), nn.Dropout(0.1),
           nn.Linear(10, 10, bias=True), nn.ReLU(), nn.Dropout(0.1),
-          nn.Linear(10, 1, bias=True), nn.Sigmoid()).to(device) #10,000 epoch를 돌려도 학습이 안됨
-# why?
-# 2st winter seconds 시작 -> vanishing gradient
+          nn.Linear(10, 1, bias=True), nn.Sigmoid()).to(device) #해결완료

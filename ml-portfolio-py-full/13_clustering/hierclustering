@@ -1,0 +1,50 @@
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.cluster.hierarchy import dendrogram, linkage
+
+# 2차원 랜덤 넘버 생성
+data = np.random.rand(10,2)
+
+# 원본 시각화
+x = data[:, 0]
+y = data[:, 1]
+plt.scatter(x, y, alpha=0.5, label='True Position')
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.show()
+
+# Single-Linkage 클러스터링 수행
+hcluster = linkage(data, method='single')
+
+# 클러스터링 결과 시각화
+dendrogram(hcluster)
+plt.show()
+
+# Complete-Linkage 클러스터링 수행
+hcluster = linkage(data, method='complete')
+
+# 클러스터링 결과 시각화
+dendrogram(hcluster)
+plt.show()
+
+from sklearn import datasets
+from sklearn.cluster import KMeans
+from matplotlib import pyplot as plt
+
+# 초승달 데이터 만들기
+input_data, _ = datasets.make_moons(n_samples=200, noise=0.05)
+
+# 2개 군집으로 클러스터링하기 위한 모델 생성
+model = KMeans(n_clusters=2)
+
+# 모델에 데이터 입력 및 클러스터링 수행
+model.fit(input_data)
+
+# 군집 결과 받아오기
+labels = model.predict(input_data)
+
+# 시각화
+x = input_data[:, 0]
+y = input_data[:, 1]
+plt.scatter(x, y, c=labels, alpha=0.5)
+plt.show()

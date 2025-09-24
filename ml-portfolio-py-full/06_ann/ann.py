@@ -62,7 +62,7 @@ for epoch in range(3001):
     cost = loss_func(hypothesis, labels)
     cost.backward()
     optimizer.step()
-
+  
    
     if epoch % 300 == 0:
         print(epoch, cost.item())

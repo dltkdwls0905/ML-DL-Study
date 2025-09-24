@@ -1,0 +1,55 @@
+from sklearn import datasets
+from sklearn.cluster import KMeans
+from matplotlib import pyplot as plt
+
+# IRIS 데이터셋에서 데이터 부분만 읽어오기
+iris = datasets.load_iris()
+input_data = iris.data
+print(input_data[0:3])
+
+# 3개 군집으로 클러스터링하기 위한 모델 생성
+model = KMeans(n_clusters=3)
+
+# 모델에 데이터 입력 및 클러스터링 수행
+model.fit(input_data)
+
+# 군집 결과 받아오기
+labels = model.predict(input_data)
+
+# 꽃받침 기준 시각화
+x = input_data[:, 0]
+y = input_data[:, 1]
+plt.scatter(x, y, c=labels, alpha=0.5)
+plt.xlabel('sepal length (cm)')
+plt.ylabel('sepal width (cm)')
+plt.show()
+
+# 꽃잎 기준 시각화
+x = input_data[:, 2]
+y = input_data[:, 3]
+plt.scatter(x, y, c=labels, alpha=0.5)
+plt.xlabel('petal length (cm)')
+plt.ylabel('petal width (cm)')
+plt.show()
+
+from sklearn import datasets
+from sklearn.cluster import KMeans
+from matplotlib import pyplot as plt
+
+# 초승달 데이터 만들기
+input_data, _ = datasets.make_moons(n_samples=200, noise=0.05)
+
+# 2개 군집으로 클러스터링하기 위한 모델 생성
+model = KMeans(n_clusters=2)
+
+# 모델에 데이터 입력 및 클러스터링 수행
+model.fit(input_data)
+
+# 군집 결과 받아오기
+labels = model.predict(input_data)
+
+# 시각화
+x = input_data[:, 0]
+y = input_data[:, 1]
+plt.scatter(x, y, c=labels, alpha=0.5)
+plt.show()

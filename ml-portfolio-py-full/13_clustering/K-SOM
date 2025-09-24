@@ -1,0 +1,56 @@
+from sklearn import datasets
+from sklearn_som.som import SOM
+from matplotlib import pyplot as plt
+
+# IRIS 데이터셋에서 데이터 부분만 읽어오기
+iris = datasets.load_iris()
+# 꽃받침 부분만 잘라내기 (2차원 데이터 만들기)
+data = iris.data[:, :2]
+label = iris.target
+print(data[0:3])
+print(label[0:3])
+
+# 2차원 데이터를 3*1 행렬(3개로 군집)로 매핑하는 SOM 모델 생성
+model = SOM(m=3, n=1, dim=2)
+model.fit(data)
+
+# 군집 결과 받아오기
+predict = model.predict(data)
+
+# 원본 시각화
+x = data[:, 0]
+y = data[:, 1]
+plt.scatter(x, y, c=label[:], alpha=0.5)
+plt.xlabel('sepal length (cm)')
+plt.ylabel('sepal width (cm)')
+plt.show()
+
+# SOM 클러스터링 결과 시각화
+x = data[:, 0]
+y = data[:, 1]
+plt.scatter(x, y, c=predict[:], alpha=0.5)
+plt.xlabel('sepal length (cm)')
+plt.ylabel('sepal width (cm)')
+plt.show()
+
+from sklearn import datasets
+from sklearn.cluster import KMeans
+from matplotlib import pyplot as plt
+
+# 초승달 데이터 만들기
+input_data, _ = datasets.make_moons(n_samples=200, noise=0.05)
+
+# 2개 군집으로 클러스터링하기 위한 모델 생성
+model = KMeans(n_clusters=2)
+
+# 모델에 데이터 입력 및 클러스터링 수행
+model.fit(input_data)
+
+# 군집 결과 받아오기
+labels = model.predict(input_data)
+
+# 시각화
+x = input_data[:, 0]
+y = input_data[:, 1]
+plt.scatter(x, y, c=labels, alpha=0.5)
+plt.show()

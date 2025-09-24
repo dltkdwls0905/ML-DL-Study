@@ -28,3 +28,5 @@ model = nn.Sequential(
           nn.Linear(10, 10, bias=True), nn.ReLU(), nn.Dropout(0.1),
           nn.Linear(10, 10, bias=True), nn.ReLU(), nn.Dropout(0.1),
           nn.Linear(10, 1, bias=True), nn.Sigmoid()).to(device) #10,000 epoch를 돌려도 학습이 안됨
+# why?
+# 2st winter seconds 시작 -> vanishing gradient

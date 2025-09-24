@@ -1,17 +1,40 @@
-from sklearn.datasets import load_iris
-from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
-from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from sklearn import tree
+import graphviz
 
-X, y = load_iris(return_X_y=True)
-Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=42)
+file_path = "C:/Users/82108/Desktop/스터디 폴더/Decision tree/PlayTennis.csv"
+datas = pd.read_csv(file_path)
 
-clf = DecisionTreeClassifier(max_depth=3, random_state=42).fit(Xtr, ytr)
-print(export_text(clf, feature_names=load_iris().feature_names))
-print("Test Acc:", clf.score(Xte, yte))
+print(datas)
 
-# 트리 시각화 (이미지 파일 저장)
-plt.figure(figsize=(10,6))
-plot_tree(clf, feature_names=load_iris().feature_names, class_names=load_iris().target_names, filled=True)
-plt.tight_layout(); plt.savefig("decision_tree_iris.png")
-print("Saved: decision_tree_iris.png")
+label_encoder = LabelEncoder()
+
+target_names = label_encoder.fit(datas['play']).classes_
+
+print("target_names : {}".format(target_names))
+
+datas['outlook'] = label_encoder.fit_transform(datas['outlook'])
+datas['temp'] = label_encoder.fit_transform(datas['temp'])
+datas['humidity'] = label_encoder.fit_transform(datas['humidity'])
+datas['windy'] = label_encoder.fit_transform(datas['windy'])
+datas['play'] = label_encoder.fit_transform(datas['play'])
+
+print(datas)
+
+x_data, y_data = datas.drop(['play'], axis =1), datas['play']
+
+print(x_data)
+print()
+print(y_data)
+
+decision_tree = tree.DecisionTreeClassifier(criterion = 'entropy')
+train_result = decision_tree.fit(x_data, y_data)
+
+graph = graphviz.Source(tree.export_graphviz(train_result, out_file=None, feature_names=x_data.columns, class_names=target_names))
+
+print(graph)
+
+predict_result = decision_tree.predict(x_data)
+
+print(predict_result == y_data)

@@ -1,0 +1,30 @@
+from sklearn import datasets
+from matplotlib import pyplot as plt
+
+# 초승달 데이터 만들기
+input_data, _ = datasets.make_moons(n_samples=200, noise=0.05)
+
+# 시각화
+x = input_data[:, 0]
+y = input_data[:, 1]
+plt.scatter(x, y, alpha=0.5)
+plt.show()
+
+from sklearn import datasets
+from sklearn.cluster import DBSCAN
+from matplotlib import pyplot as plt
+
+# 초승달 데이터 만들기
+input_data, _ = datasets.make_moons(n_samples=200, noise=0.05)
+
+# DBSCAN 모델 생성
+model = DBSCAN(eps=0.2, min_samples=5, metric='euclidean')
+
+# DBSCAN 클러스터링 수행
+labels = model.fit_predict(input_data)
+
+# 시각화
+x = input_data[:, 0]
+y = input_data[:, 1]
+plt.scatter(x, y, c=labels, alpha=0.5)
+plt.show()

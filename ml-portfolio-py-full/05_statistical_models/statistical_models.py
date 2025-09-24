@@ -1,33 +1,94 @@
-# 간단 HMM(비터비) 데모: 관측열 O에 대해 가장 그럴듯한 상태열 S 추정
-import numpy as np
-states = ['H','C']  # Healthy, Cold
-obs = ['normal','cold','dizzy']
+import os
+import sklearn_crfsuite
+from sklearn_crfsuite import metrics
 
-start_p = {'H':0.6,'C':0.4}
-trans_p = {'H':{'H':0.7,'C':0.3}, 'C':{'H':0.4,'C':0.6}}
-emit_p  = {'H':{'normal':0.5,'cold':0.4,'dizzy':0.1},
-           'C':{'normal':0.1,'cold':0.3,'dizzy':0.6}}
+file_path = "spacing_data.txt"
 
-def viterbi(obs_seq):
-    V = [{}]; path = {}
-    # 초기화
-    for s in states:
-        V[0][s] = np.log(start_p[s]) + np.log(emit_p[s][obs_seq[0]])
-        path[s] = [s]
-    # 동적 프로그래밍
-    for t in range(1, len(obs_seq)):
-        V.append({}); new_path = {}
-        for s in states:
-            (prob, prev) = max((V[t-1][s0] + np.log(trans_p[s0][s]) + np.log(emit_p[s][obs_seq[t]]), s0) for s0 in states)
-            V[t][s] = prob
-            new_path[s] = path[prev] + [s]
-        path = new_path
-    # 종료
-    n = len(obs_seq)-1
-    (prob, state) = max((V[n][s], s) for s in states)
-    return prob, path[state]
+with open(file_path, "r", encoding="utf8") as inFile:
+    lines = inFile.readlines()
 
-sequence = ['normal','cold','dizzy']
-prob, state_seq = viterbi(sequence)
-print("Obs:", sequence)
-print("Viterbi best path:", state_seq)
+datas = []
+for line in lines:
+    pieces = line.strip().split("\t")
+    eumjeol_sequence, label = pieces[0].split(), pieces[1].split()
+    datas.append((eumjeol_sequence, label))
+
+number_of_train_datas = int(len(datas)*0.9)
+
+train_datas = datas[:number_of_train_datas]
+test_datas = datas[number_of_train_datas:]
+
+print("train_datas 개수 : " + str(len(train_datas)))
+print("test_datas 개수 : " + str(len(test_datas)))
+
+def sent2feature(eumjeol_sequence):
+  features = []
+  sequence_length = len(eumjeol_sequence)
+  for index, eumjeol in enumerate(eumjeol_sequence):
+      feature = { "BOS":False, "EOS":False, "WORD":eumjeol, "IS_DIGIT":eumjeol.isdigit() }
+
+      if(index == 0):
+          feature["BOS"] = True
+      elif(index == sequence_length-1):
+          feature["EOS"] = True
+
+      if(index-1 >= 0):
+          feature["-1_WORD"] = eumjeol_sequence[index-1]
+      if(index-2 >= 0):
+          feature["-2_WORD"] = eumjeol_sequence[index-2]
+
+      if(index+1 <= sequence_length-1):
+          feature["+1_WORD"] = eumjeol_sequence[index+1]
+      if(index+2 <= sequence_length-1):
+          feature["+2_WORD"] = eumjeol_sequence[index+2]
+
+      features.append(feature)
+
+  return features
+
+train_x, train_y = [], []
+for eumjeol_sequence, label in train_datas:
+    train_x.append(sent2feature(eumjeol_sequence))
+    train_y.append(label)
+
+test_x, test_y = [], []
+for eumjeol_sequence, label in test_datas:
+    test_x.append(sent2feature(eumjeol_sequence))
+    test_y.append(label)
+
+crf = sklearn_crfsuite.CRF()
+crf.fit(train_x, train_y)
+
+def show_predict_result(test_datas, predict):
+  for index_1 in range(len(test_datas)):
+      eumjeol_sequence, correct_labels = test_datas[index_1]
+      predict_labels = predict[index_1]
+
+      correct_sentence, predict_sentence = "", ""
+      for index_2 in range(len(eumjeol_sequence)):
+          if(index_2 == 0):
+              correct_sentence += eumjeol_sequence[index_2]
+              predict_sentence += eumjeol_sequence[index_2]
+              continue
+
+          if(correct_labels[index_2] == "B"):
+              correct_sentence += " "
+          correct_sentence += eumjeol_sequence[index_2]
+
+          if (predict_labels[index_2] == "B"):
+              predict_sentence += " "
+          predict_sentence += eumjeol_sequence[index_2]
+
+      print("정답 문장 : " + correct_sentence)
+      print("출력 문장 : " + predict_sentence)
+      print()
+
+predict = crf.predict(test_x)
+
+print("Accuracy score : " + str(metrics.flat_accuracy_score(test_y, predict)))
+print()
+
+print("10개의 데이터에 대한 모델 출력과 실제 정답 비교")
+print()
+
+show_predict_result(test_datas[:10], predict[:10])

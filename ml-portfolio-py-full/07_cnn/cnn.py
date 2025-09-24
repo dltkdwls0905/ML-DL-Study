@@ -1,39 +1,122 @@
-# 간단 CNN으로 sklearn digits(8x8) 분류 (다운로드 없이 가능)
-import torch, torch.nn as nn, torch.optim as optim
-from sklearn.datasets import load_digits
-from sklearn.model_selection import train_test_split
+import os
 import numpy as np
+from sklearn.metrics import accuracy_score
+import torch
+import torch.nn as nn
+from torch.utils.data import (DataLoader, RandomSampler, TensorDataset)
+from keras.datasets import mnist
 
-digits = load_digits()
-X = digits.images.astype(np.float32) / 16.0  # (n,8,8)
-y = digits.target
-X = X[:,None,:,:]  # (n,1,8,8)
+class MNIST_CNN(nn.Module):
 
-Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+  def __init__(self, config):
 
-Xtr = torch.tensor(Xtr); ytr = torch.tensor(ytr, dtype=torch.long)
-Xte = torch.tensor(Xte); yte = torch.tensor(yte, dtype=torch.long)
+    super(MNIST_CNN, self).__init__()
 
-class SmallCNN(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(1,16,3,padding=1), nn.ReLU(), nn.MaxPool2d(2),   # 8->4
-            nn.Conv2d(16,32,3,padding=1), nn.ReLU(), nn.AdaptiveAvgPool2d((1,1))
-        )
-        self.classifier = nn.Sequential(nn.Flatten(), nn.Linear(32, 10))
-    def forward(self,x): return self.classifier(self.features(x))
+    
+    self.conv1 = nn.Sequential()
+    self.conv1.add_module("conv1", nn.Conv2d(1,32,kernel_size=(3,3), stride=(1,1), padding=(1,1)))
+    self.conv1.add_module("relu1", nn.ReLU())
+    self.conv1.add_module("maxpool1", nn.MaxPool2d(kernel_size=(2,2), stride=(2,2)))
 
-model = SmallCNN()
-opt = optim.Adam(model.parameters(), lr=1e-3)
-lossf = nn.CrossEntropyLoss()
+   
+    
+    self.conv2 = nn.Sequential(
+        nn.Conv2d(32,64,kernel_size=3, stride=1, padding=1),
+        nn.ReLU(),
+        nn.MaxPool2d(kernel_size=2, stride=2))
 
-for ep in range(10):
-    model.train(); opt.zero_grad()
-    out = model(Xtr); loss = lossf(out, ytr); loss.backward(); opt.step()
-    acc = (out.argmax(1)==ytr).float().mean().item()
-    print(f"[{ep}] loss={loss.item():.4f} acc={acc:.3f}")
+   
+    self.fnn = nn.Linear(7*7*64,10, bias=True)
+    
+    nn.init.xavier_uniform_(self.fnn.weight)
 
-model.eval()
-te_acc = (model(Xte).argmax(1)==yte).float().mean().item()
-print("Test Acc:", te_acc)
+  def forward(self, input_features):
+
+
+    output = self.conv1(input_features)
+
+
+    output = self.conv2(output)
+
+  
+    output = output.view(output.size(0), -1)
+    hypothesis = self.fnn(output)
+
+    return hypothesis
+
+def load_dataset():
+
+  (train_X, train_y), (test_X, test_y) = mnist.load_data()
+  print(train_X.shape) # (60000, 28, 28)
+  print(train_y.shape) # (60000,10)
+  print(test_X.shape) # (10000, 28, 28)
+  print(test_y.shape) # (10000,10)
+
+
+  train_X = train_X.reshape(-1, 1, 28, 28)
+  test_X  = test_X.reshape(-1, 1, 28, 28)
+  print(train_X.shape)
+  print(test_X.shape)
+
+  train_X = torch.tensor(train_X, dtype=torch.float)
+  train_y = torch.tensor(train_y, dtype=torch.long)
+  test_X = torch.tensor(test_X, dtype=torch.float)
+  test_y = torch.tensor(test_y, dtype=torch.long)
+
+  return (train_X, train_y), (test_X, test_y)
+
+# 모델 평가 결과 계산을 위해 텐서를 리스트로 변환하는 함수
+def tensor2list(input_tensor):
+    return input_tensor.cpu().detach().numpy().tolist()
+
+# 평가 수행 함수
+def do_test(model, test_dataloader):
+
+  # 평가 모드 셋팅
+  model.eval()
+
+  # Batch 별로 예측값과 정답을 저장할 리스트 초기화
+  predicts, golds = [], []
+
+  with torch.no_grad():
+
+    for step, batch in enumerate(test_dataloader):
+
+      # .cuda()를 통해 메모리에 업로드
+      batch = tuple(t.cuda() for t in batch)
+
+      input_features, labels = batch
+      hypothesis = model(input_features)
+
+      # ont-hot 표현으로 변경
+      logits = torch.argmax(hypothesis,-1)
+
+      x = tensor2list(logits)
+      y = tensor2list(labels)
+
+      # 예측값과 정답을 리스트에 추가
+      predicts.extend(x)
+      golds.extend(y)
+
+    print("PRED=",predicts)
+    print("GOLD=",golds)
+    print("Accuracy= {0:f}\n".format(accuracy_score(golds, predicts)))
+
+# 모델 평가 함수
+def test(config):
+
+  model = MNIST_CNN(config).cuda()
+
+  # 저장된 모델 가중치 로드
+  model.load_state_dict(torch.load(os.path.join(config["output_dir"], config["model_name"])))
+
+  # 데이터 load
+  (_, _), (features, labels) = load_dataset()
+
+  test_features = TensorDataset(features, labels)
+  test_dataloader = DataLoader(test_features, shuffle=True, batch_size=config["batch_size"])
+
+  do_test(model, test_dataloader)
+
+
+    
